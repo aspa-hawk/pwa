@@ -129,13 +129,11 @@ usuario'or'1'!='@dominio.com
 _____________________________________________________________
 
 Google Recaptcha key
-
 Send a POST to the following URL:
 
 https://www.google.com/recaptcha/api/siteverify
 
 secret and response are two required POST parameters, where secret is the key and response is the response to test for.
-
 Regular expression: ^6[0-9a-zA-Z_-]{39}$. The API key always starts with a 6 and is 40 chars long. 
 
 _____________________________________________________________
@@ -199,3 +197,30 @@ ffuf -w /path/to/postdata.txt -X POST -d "username=admin\&password=FUZZ" -u http
 # Fuzz POST JSON data. Match all responses not containing text "error".
 ffuf -w entries.txt -u https://example.org/ -X POST -H "Content-Type: application/json" \
       -d '{"name": "FUZZ", "anotherkey": "anothervalue"}' -fr "error"
+_____________________________________________________________
+
+MARYAM
+# Using dns_search. --max means all of resources. --api shows the results as json.
+# .. -t means use multi-threading.
+maryam -e dns_search -d ibm.com -t 5 --max --api --form 
+
+To search for a RegEx within a web page
+    maryam
+    crawl_pages -d example.com -r https?://[A-z0-9\._\/\-?=]+
+
+    If you want to crawl in the more pages:-l 2
+    If you want to get keywords, emails and etc:--more
+
+OR without entering the framework
+    maryam -e crawl_pages -d domain.tld -r "https?://[A-z0-9\._\/\-?=]+" --limit 2
+
+Find pdf files using search engines
+    docs_search -q amazon -f pdf -e google,bing,metacrawler --thread 3
+
+DNS brute force
+    maryam
+    dnsbrute -d example.com --thread 10 --wordlist mylist.txt
+
+Extract links and save data as a JSON report
+    maryam -e crawler -d <DOMAIN> --output
+    maryam -e report json output_file_name osint/crawler
