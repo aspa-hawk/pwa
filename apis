@@ -1,0 +1,201 @@
+API 1: Autorización de nivel de objeto vulnerable
+Las API tienden a exponer puntos finales (end-points) que manejan identificadores de objetos, creando un problema de Control de Acceso y ampliando la 
+superficie de ataque. En cada función que accede a datos utilizando una entrada del usuario, se deben considerarse agregar verificaciones adicionales de 
+autorización a nivel de objeto.
+
+Ejemplo: /api/shops/{shopID}/create
+
+La autorización a nivel de objeto es un mecanismo de control de acceso que generalmente se implementa a nivel de código para validar que un usuario solo puede 
+acceder a objetos a los que debería tener acceso. 
+Cada end-point de API que recibe una ID de un objeto y realiza cualquier tipo de acción sobre el objeto, debe implementar comprobaciones de autorización a 
+nivel de ese objeto. Las comprobaciones deben validar que el usuario conectado tiene acceso para realizar la acción solicitada en el objeto solicitado.
+
+Herramientas con las que sueles probar las APIs: Postman, Fiddler, ReadyAPI.
+
+API 2: Autenticación de usuario vulnerable
+A menudo, los mecanismos de autenticación se implementan incorrectamente, lo que permite a los atacantes comprometer los tokens de autenticación o explotar 
+fallas de implementación para asumir las identidades de otros usuarios de manera temporal o permanente. 
+La incapacidad del sistema para identificar al cliente/usuario compromete la seguridad de la API en general.
+
+Ejemplo: /api/system/verification-codes/{smsToken} (con un token de 4 dígitos)
+
+Los end-point y los flujos de autenticación son activos y deben protegerse. 
+Los formularios de "Olvidé mi contraseña / restablecer contraseña" debe tratarse de la misma manera que los mecanismos de autenticación más sensibles.
+
+Herramientas de seguridad como Acunetix o Burp Suite pueden verificar que el token está encriptado y que el hash es correcto. 
+Dichas herramientas le proporcionarán un informe básico, que luego deberá analizar cuidadosamente.
+
+API 3: Exposición excesiva de datos
+Al esperar implementaciones genéricas, los desarrolladores tienden a exponer todas las propiedades de los objetos sin tener en cuenta su sensibilidad 
+individual, confiando en que los clientes realicen el filtrado de datos antes de mostrarlo al usuario.
+
+Ejemplo: /api/articles/{articleId}/comments/{commentId} (expone todos los comentarios y los datos personales del autor del mismo)
+
+API 4: Fallas en la restricción y limitación de recursos
+Muy a menudo, las API no imponen ninguna restricción sobre el tamaño o la cantidad de recursos que puede solicitar el cliente. 
+Esto no solo puede afectar el rendimiento del servidor API, lo que lleva a la denegación de servicio (DoS), sino que también deja la puerta abierta 
+a fallas de autenticación a través de fuerza bruta.
+
+Ejemplo: /api/users?page=1&size=10000000 (brinda una cantidad excesiva de resultados)
+
+Herramientas de fuzzing como JBroFuzz o Fuzzapi, o bien, puedes utilizar las mismas herramientas con las que analizas el tráfico.
+
+API 5: Autorización vulnerable a nivel de función
+Las políticas complejas de control de acceso con diferentes jerarquías, grupos y roles, y una separación poco clara entre las funciones administrativas 
+y regulares, tienden a conducir a fallas de autorización. 
+Al explotar estos problemas, los atacantes obtienen acceso a los recursos y/o funciones administrativas de otros usuarios.
+
+Ejemplo: GET /api/admin/v1/users/all (muestra todos los usuarios de la aplicación)
+
+La mejor manera de encontrar problemas de autorización a nivel de función es realizar un análisis profundo del mecanismo de autorización, teniendo en cuenta 
+la jerarquía de usuarios, los diferentes roles o grupos en la aplicación.
+
+API 6: Asignación masiva
+La vinculación de datos proporcionados por el cliente (por ejemplo, JSON) a modelos de datos, sin un filtrado de propiedades adecuado basado en una 
+lista blanca, generalmente conduce a una asignación masiva de datos. 
+Adivinar las propiedades de los objetos, explorar otros end-point de la API, leer documentación o proporcionar propiedades de objetos adicionales en 
+las cargas útiles de solicitud, permite a los atacantes modificar las propiedades de los objetos que no deberían hacerlo.
+
+En aplicaciones modernas, los objetos pueden contener muchas propiedades que podrían ser actualizadas directamente por el cliente 
+(por ejemplo, user.first_name o user.address) y otras no (por ejemplo, user.is_vip flag).
+
+Ejemplo:
+
+PUT /api/v1/users/me
+{"user_name":"inons","age":24}
+
+Un end-point de API es vulnerable si convierte automáticamente los parámetros del cliente en propiedades de objeto internas, sin tener en cuenta la 
+sensibilidad y el nivel de exposición de estas propiedades. 
+Esto podría permitir a un atacante actualizar las propiedades del objeto a las que no debería tener acceso.
+
+API 7: Configuración incorrecta de seguridad
+La configuración incorrecta de seguridad suele ser el resultado de configuraciones predeterminadas no seguras, configuraciones incompletas 
+o ad-hoc, almacenamiento abierto en la nube, encabezados HTTP mal configurados, métodos HTTP innecesarios, uso compartido de recursos de origen 
+cruzado permisivo (CORS) y mensajes de error detallados que contienen información confidencial.
+
+Ejemplo:
+
+$ curl -X GET 'https://api.server/endpoint/' -H 'authorization: Basic Zm9vOmJhcg=='
+
+API 8: Inyección
+Las inyecciones SQL, NoSQL, comandos, etc., ocurren cuando se envían datos no confiables a un intérprete como parte de un comando o consulta. 
+Los datos maliciosos del atacante pueden engañar al intérprete para que ejecute comandos no deseados o acceda a los datos sin la autorización adecuada.
+
+Ejemplo:
+
+$ curl -k "https://${deviceIP}:4567/api/CONFIG/restore" -F 'appid=$(/etc/pod/power_down.sh)'
+
+DELETE /api/bookings?bookingId[$ne]=678
+
+API 9: Gestión de activos inapropiada
+Las API tienden a exponer más end-points que las aplicaciones web tradicionales, lo que hace que la documentación adecuada y actualizada sea muy importante. 
+Los hosts adecuados y el inventario de versiones de API implementadas también juegan un papel importante para mitigar problemas como versiones de API obsoletas
+y puntos finales de depuración expuestos.
+
+Ejemplo:
+
+api.someservice.com/v1
+api.someservice.com/v2
+api.someservice.com/v2
+
+API 10: Registro y monitoreo insuficiente
+El registro y el monitoreo insuficientes, junto con la integración faltante o ineficaz de la respuesta a incidentes, permite facilitar los ataques, 
+mantener la persistencia, controlar y manipular más sistemas, extraer o destruir datos sin control, etc. 
+La mayoría de los estudios de incumplimiento demuestran que el tiempo para detectar un incumplimiento es superior a 200 días, 
+generalmente detectado por partes externas en lugar de procesos internos o monitoreo.
+_________________________________________________________________________________________
+
+Más herramientas para Rest API
+
+w3af
+Astra
+FuzzAPI
+Vooki
+cURL
+JWT.io
+SQLMap
+Fuzzing Wodlists (SecLists, fuzzdb, api_wordlist)
+
+- The Tools -
+Recon: Amass, Lazyrecon, webscreenshot, BBHT
+API Enumeration: Kiterunner, ffuf, Axiom, TomNomNom Wordlist method, inQL
+Vulnerabilities: Autorize, logger++, SQLMap, NoSQLMap, JWT_Tool, Burp
+
+Metodologías POISED o STRIDE
+
+usuario'or'1'!='@dominio.com
+/user/1'%20OR%20'1'='1
+
+_____________________________________________________________
+
+Google Recaptcha key
+
+Send a POST to the following URL:
+
+https://www.google.com/recaptcha/api/siteverify
+
+secret and response are two required POST parameters, where secret is the key and response is the response to test for.
+
+Regular expression: ^6[0-9a-zA-Z_-]{39}$. The API key always starts with a 6 and is 40 chars long. 
+
+_____________________________________________________________
+
+Step 1: Subdomain Enumeration
+Comandos: 
+subfinder -d hackerone.com -silent| httpx -title -tech-detect -status-code
+subfinder -d hackerone.com -silent | httpx -favicon
+subfinder -d hackerone.com -silent | httpx -jarm
+subfinder -d hackerone.com -silent | httpx -asn
+assetfinder -subs-only google.com
+httpx -list google.com -silent -probe
+httpx -l urls.txt -path /v1/api -sc
+
+whatweb -a 1 <URL> #Stealthy
+whatweb -a 3 <URL> #Aggresive
+whatweb -a 4 <URL>
+webtech -u <URL>
+webanalyze -host https://google.com -crawl 2
+
+nikto -h <URL>
+wapiti -u <URL>
+W3af
+zaproxy #You can use an API
+nuclei -t nuclei-templates
+
+wfuzz -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt https://domain.com/api/FUZZ
+ffuf -c -w /usr/share/wordlists/dirb/big.txt -u http://10.10.10.10/FUZZ
+maryam -e dns_search -d google.com -t 5 --max --api --form
+
+# Extract all API endpoints from AngularJS & Angular javascript files
+curl -s https://google.com | grep -Po "(\/)((?:[a-zA-Z\-_\:\.0-9\{\}]+))(\/)*((?:[a-zA-Z\-_\:\.0-9\{\}]+))(\/)((?:[a-zA-Z\-_\/\:\.0-9\{\}]+))" | sort -u
+
+# Directory discovery
+ffuf -w /path/to/wordlist -u https://target/FUZZ
+
+# Adding classical header (some WAF bypass)
+ffuf -c -w "/opt/host/main.txt:FILE" -H "X-Originating-IP: 127.0.0.1, X-Forwarded-For: 127.0.0.1, X-Remote-IP: 127.0.0.1, X-Remote-Addr: 127.0.0.1, X-Client-IP: 127.0.0.1" -fs 5682,0 -u https://target/FUZZ
+
+# match all responses but filter out those with content-size 42
+ffuf -w wordlist.txt -u https://example.org/FUZZ -mc all -fs 42 -c -v
+
+# Fuzz Host-header, match HTTP 200 responses.
+ffuf -w hosts.txt -u https://example.org/ -H "Host: FUZZ" -mc 200
+
+# Virtual host discovery (without DNS records)
+ffuf -w /path/to/vhost/wordlist -u https://target -H "Host: FUZZ" -fs 4242
+
+# Playing with threads and wait
+./ffuf -u https://target/FUZZ -w /home/mdayber/Documents/Tools/Wordlists/WebContent_Discovery/content_discovery_4500.txt -c -p 0.1 -t 10
+
+# GET param fuzzing, filtering for invalid response size (or whatever)
+ffuf -w /path/to/paramnames.txt -u https://target/script.php?FUZZ=test_value -fs 4242
+
+# GET parameter fuzzing if the param is known (fuzzing values) and filtering 401
+ffuf -w /path/to/values.txt -u https://target/script.php?valid_name=FUZZ -fc 401
+
+# POST parameter fuzzing
+ffuf -w /path/to/postdata.txt -X POST -d "username=admin\&password=FUZZ" -u https://target/login.php -fc 401
+
+# Fuzz POST JSON data. Match all responses not containing text "error".
+ffuf -w entries.txt -u https://example.org/ -X POST -H "Content-Type: application/json" \
+      -d '{"name": "FUZZ", "anotherkey": "anothervalue"}' -fr "error"
