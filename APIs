@@ -160,6 +160,10 @@ W3af
 zaproxy #You can use an API
 nuclei -t nuclei-templates
 
+./zenbuster.py -d -w /usr/share/wordlists/dirb/common.txt -u target.thm -v
+python3 zenbuster.py -w ../subdomains.txt --host target.thm --ssl -O myResults.log
+./zenbuster -w subdomains.txt -u target.thm --quiet -ic 400, 403 (With .bashrc alias)
+
 wfuzz -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt https://domain.com/api/FUZZ
 ffuf -c -w /usr/share/wordlists/dirb/big.txt -u http://10.10.10.10/FUZZ
 maryam -e dns_search -d google.com -t 5 --max --api --form
